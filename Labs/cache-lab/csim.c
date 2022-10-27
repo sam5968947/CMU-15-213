@@ -5,19 +5,20 @@
 #include <stdbool.h>
 #include "cachelab.h"
 
+
 typedef struct{ // 8 + 8 = 16 bytes
     uint32_t vaild; // 4bytes
     uint32_t tag; // 4bytes
     uint64_t timeStamp; // for LRU, 8bytes
 }cacheLine;
 
-#define MAX_LEN         256 // 1bytes = 8bits???
+#define MAX_LEN         256 // 1bytes = 8bits
 #define U64MAX          0xFFFFFFFFFFFFFFFF // 8bytes = 64bits            
 
-static cacheLine** virtual_cache = NULL; // ???, Create a array of unknown size
+static cacheLine** virtual_cache = NULL; // Create a array of E*sets size
 static uint8_t s=0, E=0, b=0;
 static int miss=0, hits=0, evictions=0;
-static uint64_t ticks=0; // ???
+static uint64_t ticks=0; // counter
 static bool print_msg = false;
 
 
@@ -34,6 +35,7 @@ static char get_operation(char* str){
 }
 
 
+//221027
 /**
  * func for applying LRU algo.
  */ 
@@ -49,7 +51,7 @@ static uint8_t LRU(uint8_t set){
     return repalce;
 }
 
-
+//221027
 /**
  * func for loading data from cache
  */ 
@@ -59,6 +61,9 @@ static void load_operation(char* line){
     uint32_t dataBytes=0;
     char op;
 
+    // linux>  ./csim-ref -v -s 8 -E 2 -b 4 -t traces/yi.trace
+    // ex : line = " S 18,1" --> (S M L I) (address = t+s+b) (size)
+    // use sscanf to replace regex --> op = 'S', addr = 12, dataBytes = 1
     sscanf(line, " %c %lx,%u", &op, &addr, &dataBytes);
 
     if(op != 'L' && op != 'M' && op != 'S'){
@@ -90,6 +95,7 @@ static void load_operation(char* line){
         }
     }
 
+    //def of pdf
     hits = op == 'M' ? hits+1 : hits; 
 
     if(find){
@@ -138,7 +144,6 @@ static void load_operation(char* line){
 
 }
 
-
 /**
  * func for parsing commands from trace file
  */ 
@@ -149,8 +154,8 @@ static void cmd_parsing(char* filename){
 
     while(!feof(fp) && !ferror(fp)){
 
-        strcpy(line, "\n");
-        fgets(line, MAX_LEN, fp);
+        strcpy(line, "\n"); //default line = "\n"
+        fgets(line, MAX_LEN, fp); // if we don't get info from fp, line is still the same.
         load_operation(line);
 
         ticks++;        
@@ -200,7 +205,7 @@ static void cache_init(uint8_t s, uint8_t E){
     uint32_t sets = 1 << s;
 
     //sizeof(int*) = 8, means the systems is 64 bits. eles sizeof(int*) = 4, ... 32 bits.
-    // need to draw the virtual_cache???
+    // need to draw the virtual_cache
     virtual_cache = (cacheLine**)malloc(sizeof(cacheLine*) * sets);
 
     for(int i=0; i<sets; i++){
@@ -212,7 +217,6 @@ static void cache_init(uint8_t s, uint8_t E){
 /**
  * func for releasing cache memory
  */ 
-// need to input uint8_t s???
 static void free_cache(){
 
     uint32_t sets = 1 << s;
@@ -220,7 +224,7 @@ static void free_cache(){
     for(int i=0; i<sets; i++){
 
         free(virtual_cache[i]);
-        virtual_cache[i] = NULL; // ???just need free command???
+        virtual_cache[i] = NULL;
     }
 
     free(virtual_cache);
@@ -282,7 +286,7 @@ int main(int argc, char* argv[]){
 
     cache_init(s, E);
     cmd_parsing(filename);
-    printSummary(hits, miss, evictions);//where is printf in .h file???
+    printSummary(hits, miss, evictions);//c make file
     free_cache();
 
     return 0;
