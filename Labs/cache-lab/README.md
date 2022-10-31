@@ -94,7 +94,7 @@ Lab文件說得很清楚:
 
 ![image-20221029161404919](https://raw.githubusercontent.com/WeiLin66/pictures/main/image-20221029161404919.png)
 
-附上Github上完整的code: [csim.c](https://github.com/WeiLin66/CMU-15-213/blob/main/Labs/cache-lab/csim.c)
+附上Github上完整的code: [csim.c](https://github.com/sam5968947/CMU-15-213/blob/master/Labs/cache-lab/csim.c)
 
 #### 讀取輸入參數
 
