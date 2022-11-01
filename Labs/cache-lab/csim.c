@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "cachelab.h"
 
+
 typedef struct{ // 8 + 8 = 16 bytes
     uint32_t vaild; // 4bytes
     uint32_t tag; // 4bytes
@@ -14,11 +15,12 @@ typedef struct{ // 8 + 8 = 16 bytes
 #define MAX_LEN         256 // 1bytes = 8bits
 #define U64MAX          0xFFFFFFFFFFFFFFFF // 8bytes = 64bits            
 
-static cacheLine** virtual_cache = NULL; // Create a array of E*sets size
+static cacheLine** virtual_cache = NULL; // Create a array of E*S size
 static uint8_t s=0, E=0, b=0;
 static int miss=0, hits=0, evictions=0;
 static uint64_t ticks=0; // counter
 static bool print_msg = false;
+
 
 /**
  * func for getting operator
@@ -31,6 +33,7 @@ static char get_operation(char* str){
 
     return str[1];
 }
+
 
 //221027
 /**
