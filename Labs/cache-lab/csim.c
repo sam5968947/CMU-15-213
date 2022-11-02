@@ -88,18 +88,18 @@ static int LRU(uint64_t set)
 
 static void load_operation(char *line)
 {
-    char ord;               // the command ex : L M S I
+    char op;               // the command ex : L M S I
     uint64_t addr = 0;      // addr = t + s + b
     uint32_t dataBytes = 0; // the required size
 
-    sscanf(line, " %c %u,%u", &ord, &addr, &dataBytes); // ???
+    sscanf(line, " %c %u,%u", &op, &addr, &dataBytes);
 
-    if (ord != 'L' && ord != 'M' && op != 'S')
+    if (op != 'L' && op != 'M' && op != 'S')
         return;
 
     if (print_msg)
     {
-        print("%c %u,%u\n", ord, addr, dataBytes);
+        print("%c %u,%u\n", op, addr, dataBytes);
     }
 
     // ex: addr = (1)(11)(011)
@@ -125,7 +125,7 @@ static void load_operation(char *line)
     }
 
     // def of pdf
-    hits = ord == 'M' ? hits + 1 : hits;
+    hits = op == 'M' ? hits + 1 : hits;
 
     if (find)
     {
@@ -168,7 +168,7 @@ static void load_operation(char *line)
         virtual_cache[set][empty_line].timeStamp = ticks;
     }
 
-    if (ord == 'M' && print_msg)
+    if (op == 'M' && print_msg)
     {
 
         printf("hit");
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
             break;
 
         case 's':
-            s = atoi(argv[++i]);
+            s = atoi(argv[++i]); // get the parameter, str->int
             input_check++;
             break;
 
