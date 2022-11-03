@@ -1,7 +1,9 @@
-#include "cachelab.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <stdbool.h>
+#include "cachelab.h"
 
 typedef struct
 {                       // 8 + 8 = 16 bytes
@@ -92,14 +94,14 @@ static void load_operation(char *line)
     uint64_t addr = 0;      // addr = t + s + b
     uint32_t dataBytes = 0; // the required size
 
-    sscanf(line, " %c %u,%u", &op, &addr, &dataBytes);
+    sscanf(line, " %c %lx,%u", &op, &addr, &dataBytes);
 
     if (op != 'L' && op != 'M' && op != 'S')
         return;
 
     if (print_msg)
     {
-        print("%c %u,%u\n", op, addr, dataBytes);
+        printf("%c %lx,%u\n", op, addr, dataBytes);
     }
 
     // ex: addr = (1)(11)(011)
