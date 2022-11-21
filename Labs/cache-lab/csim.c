@@ -6,7 +6,7 @@
 #include "cachelab.h"
 
 typedef struct
-{                       // 8 + 8 = 16 bytes
+{                       // 8 + 8 = 16 bytes 
     uint32_t vaild;     // 4bytes
     uint32_t tag;       // 4bytes
     uint64_t timeStamp; // for LRU, 8bytes
