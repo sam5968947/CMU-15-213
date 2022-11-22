@@ -21,7 +21,7 @@
   * [ ] **Bomb Lab**
   * [ ] **Attack Lab**
   * [x] **Cache Lab**
-  * [ ] **Shell Lab**
+  * [ ] **Shell Lab**(on-going, lec 10/14/15)
   * [ ] **Malloc Lab**
   * [ ] **Proxy Lab**
 
