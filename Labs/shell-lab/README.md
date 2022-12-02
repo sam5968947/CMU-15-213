@@ -29,11 +29,12 @@ Files:
 - void sigchld_handler(int sig)：處理SIGCHLD信號，即子進程停止或終止。
 - void sigint_handler(int sig)：處理SIGINT信號，即來自鍵盤的中斷ctrl-c。
 - void sigtstp_handler(int sig)：處理SIGTSTP信號，即終端停止信號ctrl-z。
-- 使用make testn用來測試你編寫的shell執行第n組測試數據的輸出。- 
+ 
+  使用make testn用來測試你編寫的shell執行第n組測試數據的輸出。- 
 
-- 使用make rtestn用來測試參考shell程序第n組測試數據的輸出（共16組測試數據）。- 
+  使用make rtestn用來測試參考shell程序第n組測試數據的輸出（共16組測試數據）。- 
 
-- tshref.out包含參考shell程序的所有測試數據的輸出結果，先看完該文件了解命令格式在開始編碼。
+  tshref.out包含參考shell程序的所有測試數據的輸出結果，先看完該文件了解命令格式在開始編碼。
 
 ### 可用輔助函數：
 - int parseline(const char *cmdline,char **argv)：獲取參數列表char **argv，返回是否為後台運行命令（true）。
