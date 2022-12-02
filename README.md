@@ -20,8 +20,8 @@
   * [ ] **Data Lab**
   * [ ] **Bomb Lab**
   * [ ] **Attack Lab**
-  * [x] **Cache Lab**(Lecture 8)
-  * [ ] **Shell Lab**(on-going, Lecture 10/14/15)
+  * [x] **Cache Lab**
+  * [ ] **Shell Lab**(on-going, Lecture 8 & 10)
   * [ ] **Malloc Lab**
   * [ ] **Proxy Lab**
 
