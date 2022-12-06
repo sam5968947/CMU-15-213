@@ -194,7 +194,7 @@ void eval(char *cmdline) {
     if(!builtin_cmd(argv))
     {   
 
-           sigfillset(&mask_all);
+        sigfillset(&mask_all);
         sigemptyset(&mask_one);
         sigaddset(&mask_one, SIGCHLD);
 
