@@ -177,7 +177,62 @@ int main(int argc, char **argv) {
  * when we type ctrl-c (ctrl-z) at the keyboard.  
 */
 void eval(char *cmdline) {
+    char *argv[MAXARGS];
+    char buf[MAXLINE];
+    int bg;
+    int state;
+    pid_t pid;
+    sigset_t mask_all, mask_one, prev;
+    
+    strcpy(buf, cmdline);
+    bg = parseline(buf, argv);
+    
+    if (argv[0] == NULL)
+    	return ;  
+    
+    // 若非定義內置命令，執行
+    if(!builtin_cmd(argv))
+    {   
 
+   	    sigfillset(&mask_all);
+    	sigemptyset(&mask_one);
+    	sigaddset(&mask_one, SIGCHLD);
+
+        // 避免競爭
+    	sigprocmask(SIG_BLOCK, &mask_one, &prev);
+    	if ((pid = fork()) == 0)
+    	{
+    		sigprocmask(SIG_SETMASK, &prev, NULL);
+            // ex : 假如此進程ID為123，則將123加入新的進程組123???
+    		if (setpgid(0, 0) < 0)
+    		{
+    			perror("SETPGID ERROR");
+    			exit(0);
+    		}
+
+            // ???
+    		if (execve(argv[0], argv, environ) < 0)
+    		{
+    			printf("%s: Command not found\n", argv[0]);
+    			exit(0);
+    		}
+    	}
+    	else
+    	{
+    		state = bg ? BG : FG;
+
+    		sigprocmask(SIG_BLOCK, &mask_all, NULL);
+    		addjob(jobs, pid, state, cmdline);
+    		sigprocmask(SIG_SETMASK, &prev, NULL);
+    	}
+        // fg等待執行結束，若為bg則直接打印
+    	if (!bg)
+    		waitfg(pid);
+    	else
+    		printf("[%d] (%d) %s",pid2jid(pid), pid, cmdline);
+        
+        // PS : 全局變數可能都須新增signal遮擋
+    }
     return;
 }
 
