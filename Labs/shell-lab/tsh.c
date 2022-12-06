@@ -225,6 +225,8 @@ void eval(char *cmdline) {
             addjob(jobs, pid, state, cmdline);
             sigprocmask(SIG_SETMASK, &prev, NULL);
         }
+
+        
         // fg等待執行結束，若為bg則直接打印
         if (!bg)
             waitfg(pid);
