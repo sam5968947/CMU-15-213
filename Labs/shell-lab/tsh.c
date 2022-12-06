@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
  * when we type ctrl-c (ctrl-z) at the keyboard.  
 */
 void eval(char *cmdline) {
-    char *argv[MAXARGS];
+    char *argv[MAXARGS]; // 全局變數???
     char buf[MAXLINE];
     int bg;
     int state;
@@ -226,7 +226,7 @@ void eval(char *cmdline) {
             sigprocmask(SIG_SETMASK, &prev, NULL);
         }
 
-        
+
         // fg等待執行結束，若為bg則直接打印
         if (!bg)
             waitfg(pid);
