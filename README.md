@@ -21,7 +21,7 @@
   * [ ] **Bomb Lab**
   * [ ] **Attack Lab**
   * [x] **Cache Lab**
-  * [ ] **Shell Lab**(on-going, Lecture 8 & 10)
+  * [x] **Shell Lab**(Lecture 8 & 10)
   * [ ] **Malloc Lab**
   * [ ] **Proxy Lab**
 
