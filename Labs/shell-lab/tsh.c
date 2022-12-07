@@ -364,10 +364,6 @@ void do_bgfg(char **argv)
     struct job_t* job = NULL; //要處理的job
     int state;                //輸入的命令
     int id;                   //存存jid或pid
-    if (!strcmp(argv[0], "bg"))
-        state = BG;
-    else
-        state = FG;
 
     state = !strcmp(argv[0], "bg") ? BG : FG;
 
