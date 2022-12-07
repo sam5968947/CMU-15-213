@@ -459,7 +459,7 @@ void sigchld_handler(int sig)
 
     while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) // just use WUNTRACED???
     {
-
+        // 因有deletejob-->有先後關係
         sigprocmask(SIG_BLOCK, &mask_all, &prev);
         //如果子進程正常結束，它就返回真；否則返回假
         if (WIFEXITED(status))
