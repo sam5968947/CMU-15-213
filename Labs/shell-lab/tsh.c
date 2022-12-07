@@ -361,7 +361,7 @@ int builtin_cmd(char **argv)
 void do_bgfg(char **argv)
 {
 
-    struct job_t *job = NULL; //要處理的job
+    struct job_t* job = NULL; //要處理的job
     int state;                //輸入的命令
     int id;                   //存存jid或pid
     if (!strcmp(argv[0], "bg"))
@@ -379,6 +379,7 @@ void do_bgfg(char **argv)
     }
 
     // 判斷為帶%或是純int
+    // 有%，為進程組
     if (argv[1][0] == '%')
     {   
         //是jid
@@ -392,12 +393,13 @@ void do_bgfg(char **argv)
             }
         }
     }
+    // 其它符號，非法輸入
     else if (!isdigit(argv[1][0]))
     {   
-        //其它符號，非法輸入
         printf("%s: argument must be a PID or %%jobid\n", argv[0]);
         return;
     }
+    // 純整數
     else
     {   
         // pid
