@@ -18,10 +18,10 @@
 ### 可用輔助函數：
 - int parseline(const char *cmdline,char **argv)：獲取參數列表char **argv，返回是否為後台運行命令（true）。
 - void clearjob(struct job_t *job)：清除job結構。
-- void initjobs(struct job_t *jobs)：初始化jobs鍊錶。
-- void maxjid(struct job_t *jobs)：返回jobs鍊錶中最大的jid號。
-- int addjob(struct job_t *jobs,pid_t pid,int state,char *cmdline)：在jobs鍊錶中添加job
-- int deletejob(struct job_t *jobs,pid_t pid)：在jobs鍊錶中刪除pid的job。
+- void initjobs(struct job_t *jobs)：初始化jobs list。
+- void maxjid(struct job_t *jobs)：返回jobs list中最大的jid號。
+- int addjob(struct job_t *jobs,pid_t pid,int state,char *cmdline)：在jobs list中添加job
+- int deletejob(struct job_t *jobs,pid_t pid)：在jobs list中刪除pid的job。
 - pid_t fgpid(struct job_t *jobs)：返回當前前台運行job的pid號。
 - struct job_t *getjobpid(struct job_t *jobs,pid_t pid)：返回pid號的job。
 - struct job_t *getjobjid(struct job_t *jobs,int jid)：返回jid號的job。
@@ -39,13 +39,13 @@
 
 - tsh應該有如下內置命令：
 
-    quit: 退出当前shell
+    quit: 退出當前shell
 
     jobs: 列出所有后台运行的工作
 
-    bg <job>: 这个命令将会向<job>代表的工作发送SIGCONT信号并放在后台运行，<job>可以是一个PID也可以是一个JID。
+    bg <job>: 這個命令将会向<job>代表的工作发送SIGCONT信号并放在后台运行，<job>可以是一个PID也可以是一个JID。
 
-    fg <job>: 这个命令会向<job>代表的工作发送SIGCONT信号并放在前台运行，<job>可以是一个PID也可以是一个JID。
+    fg <job>: 這個命令会向<job>代表的工作发送SIGCONT信号并放在前台运行，<job>可以是一个PID也可以是一个JID。
 
 - tsh應該回收（reap）所有殭屍孩子，如果一個工作是因為收到了一個它沒有捕獲的（沒有按照信號處理函數）而終止的，那麼tsh應該輸出這個工作的PID和這個信號的相關描述。
 
