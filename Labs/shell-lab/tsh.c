@@ -409,7 +409,7 @@ void do_bgfg(char **argv)
     }
 
     // 將已取得的job送入SIGCONT訊號
-    Kill(-(job->pid), SIGCONT); //重啟进程, 這裡送到進程組
+    kill(-(job->pid), SIGCONT); //重啟进程, 這裡送到進程組
     job->state = state;
     if (state == BG)
         printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
