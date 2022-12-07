@@ -28,7 +28,6 @@
 - int pid2jid(pid_t pid)：將pid號轉化為jid。
 - void listjobs(struct job_t *jobs)：打印jobs。
 - void sigquit_handler(int sig)：處理SIGQUIT信號。
-- 上述文字複製Pipapa的知乎文章，知乎好像不能完美支持latex，但是複制卻可以……
 
 ### 注意事項
 - tsh的提示符為tsh>
