@@ -407,6 +407,8 @@ void do_bgfg(char **argv)
             return;
         }
     }
+
+    // 將已取得的job送入SIGCONT訊號
     Kill(-(job->pid), SIGCONT); //重啟进程, 這裡送到進程組
     job->state = state;
     if (state == BG)
