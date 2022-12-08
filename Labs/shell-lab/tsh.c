@@ -157,8 +157,8 @@ int main(int argc, char **argv)
         }
 
         if (feof(stdin))
-        { /* End of file (ctrl-d) */
-
+        { 
+            /* End of file (ctrl-d) */
             fflush(stdout);
             exit(0);
         }
