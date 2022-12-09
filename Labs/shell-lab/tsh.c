@@ -198,7 +198,7 @@ void eval(char *cmdline)
     if (argv[0] == NULL)
         return;
 
-    // 若非定義內置命令，執行 
+    // 若非定義內置命令，執行
     if (!builtin_cmd(argv))
     {
 
