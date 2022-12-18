@@ -21,6 +21,7 @@ static int miss = 0, hits = 0, evictions = 0;
 static uint64_t ticks = 0; // counter
 static bool print_msg = false;
 
+// cache大小為S*E*B
 static void cache_init()
 {
     uint32_t S = 1 << s;
