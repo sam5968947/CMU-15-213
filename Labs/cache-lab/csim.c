@@ -33,6 +33,7 @@ static void cache_init()
     }
 }
 
+// 與cache_init相呼應，必須釋放已申請的空間
 static void cache_free()
 {
     uint32_t S = 1 << s;
