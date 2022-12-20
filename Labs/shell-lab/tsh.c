@@ -429,7 +429,7 @@ void waitfg(pid_t pid)
     sigemptyset(&mask);
 
     // (1)以prev覆蓋原先mask暫時解除block(2)執行handler內容(3)恢復原先mask
-    while (fgpid(pid) != 0)
+    while (fgpid(jobs) != 0)
     {
         sigsuspend(&mask);
     }
