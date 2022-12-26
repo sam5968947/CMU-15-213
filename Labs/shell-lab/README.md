@@ -371,5 +371,5 @@ void sigtstp_handler(int sig)
 ```
 ### 測試方式
 實驗文件還包括了作者製作的參考tsh，以及16 個測試用例，通過跑用例查看結果與參考tsh 是否相同，就能判斷我們寫的tsh 有無問題，我這裡僅放出其中幾個用例的測試截圖（左邊為參考tsh，右邊為我的tsh）：
-![avatar](ref/test_image_1.jpg)
+![avatar](ref/Github_images/test_image_1.jpg)
 
