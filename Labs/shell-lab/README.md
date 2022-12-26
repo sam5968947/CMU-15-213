@@ -86,87 +86,64 @@
 編寫`eval`的重點在創建子進程部分，也就是`fork`後使用`execve`加載指令bin檔這部分。由於`fork`指令的特性，我們無法保證父進程部分程式碼會先執行，有可能在添加作業前，`SIGCHLD`就已經抵達，所以在`fork`前要先對`SIGCHLD`進行屏蔽
 
 ```c
-void eval(char *cmdline) {
-
-    /* error handler */
-    if(cmdline == NULL){
-
-        return;
-    }
-
-    char *argv[MAXARGS] = {0};
-    char buffer[MAXLINE] = {0};
+void eval(char *cmdline)
+{
+    char *argv[MAXARGS]; // 全局變數
+    char buf[MAXLINE];
     int bg;
+    int state;
     pid_t pid;
-    sigset_t mask_all, mask_one, prev_one;
+    sigset_t mask_all, mask_one, prev;
 
-    /* 創建遮罩用來阻擋信號SIGCHLD */
-    sigfillset(&mask_all);
-    sigemptyset(&mask_one);
-    sigaddset(&mask_one, SIGCHLD);
+    strcpy(buf, cmdline);
+    bg = parseline(buf, argv);
 
-    strcpy(buffer, cmdline);
-    
-    /* 判斷該指令是否為後臺進程 */
-    bg = parseline(buffer, argv);
-
-    /* if command is a empty command, then return */
-    if(argv[0] == NULL){
-
+    if (argv[0] == NULL)
         return;
-    }
 
-    /* 是否為built-in command */
-    if(!builtin_cmd(argv)){
+    // 若非定義內置命令，執行
+    if (!builtin_cmd(argv))
+    {
 
-        /* 為了避免race condition，確保邏輯是先添加進程再觸發SIGCHLD */
-        Sigprocmask(SIG_BLOCK, &mask_one, &prev_one);
+        sigfillset(&mask_all);
+        sigemptyset(&mask_one);
+        sigaddset(&mask_one, SIGCHLD);
 
-        /* fork a child process */
-        if((pid = Fork()) == 0){
+        // 避免競爭
+        sigprocmask(SIG_BLOCK, &mask_one, &prev);
+        if ((pid = fork()) == 0)
+        {
+            sigprocmask(SIG_SETMASK, &prev, NULL);
+            // ex : 假如此進程ID為123，則將123加入新的進程組123
+            if (setpgid(0, 0) < 0)
+            {
+                perror("SETPGID ERROR");
+                exit(0);
+            }
 
-            /* 子進程會繼承父進程的信號向量表，所以需要unblock SIGCHLD，避免加載的進程無法觸發SIGCHLD */
-            Sigprocmask(SIG_SETMASK, &prev_one, NULL); // unblock SIGCHLD
-
-            setpgid(0, getpid()); // set process group id 
-
-            if(execve(argv[0], argv, environ) < 0){
-
-                printf("%s: Command not found.\n", argv[0]);
+            if (execve(argv[0], argv, environ) < 0)
+            {
+                printf("%s: Command not found\n", argv[0]);
                 exit(0);
             }
         }
+        else
+        {
+            state = bg ? BG : FG;
 
-        /* 該遮罩確保添加作業過程不會被其他信號中斷 */
-        Sigprocmask(SIG_BLOCK, &mask_all, NULL); // block all signals
-        addjob(jobs, pid, (bg ? BG : FG), buffer); // add job
-        /* 回復成原先狀態，允許接收SIGCHLD信號 */
-        Sigprocmask(SIG_SETMASK, &prev_one, NULL); // unblock all signals
+            sigprocmask(SIG_BLOCK, &mask_all, NULL);
+            addjob(jobs, pid, state, cmdline);
+            sigprocmask(SIG_SETMASK, &prev, NULL);
+        }
 
-        /* 前臺進程需要等待子進程結束 */
-        if(!bg){
-
+        // fg等待執行結束，若為bg則直接打印
+        if (!bg)
             waitfg(pid);
-        }
-        /* 若為後臺進程則打印進程相關信息後退出 */
-        else{
+        else
+            printf("[%d] (%d) %s", pid2jid(pid), pid, cmdline);
 
-            #if (DEBUG_LOG)
-            
-            int i=1;
-            strcpy(debug_log, argv[0]);
-
-            while(argv[i]){
-
-                strcat(debug_log, " ");
-                strcat(debug_log, argv[i++]);
-            }
-
-            printf("[%d] (%d) %s &\n", getjobpid(jobs, pid)->jid, pid, debug_log);
-            #endif
-        }
+        // PS : 全局變數可能都須新增signal遮擋
     }
-
     return;
 }
 ```
@@ -221,90 +198,65 @@ int builtin_cmd(char **argv) {
 `fg`, `bg`後面可以接上PID, 或`JID`(作業編號)，例如`fg 1000`，若是使用作業編號要加上特殊符號%，例如`fg %1`
 
 ```c
-void do_bgfg(char **argv) {
+void do_bgfg(char **argv)
+{
 
-    /* error handler */
-    if(argv == NULL){
+    struct job_t* job = NULL; //要處理的job
+    int state;                //輸入的命令
+    int id;                   //存存jid或pid
 
-        return;
-    }
+    state = !strcmp(argv[0], "bg") ? BG : FG;
 
-    /* 判斷是執行fg還是bg */
-    u_int8_t fgbg = 1; // define 0 for front ground; 1 for back ground
-    fgbg = strcmp(argv[0], "bg") == 0;
-
-    if(argv[1] == NULL){
-            
+    if (argv[1] == NULL)
+    {   
+        //沒带参数
         printf("%s command requires PID or %%jobid argument\n", argv[0]);
         return;
     }
 
-    int target_jid;
-    pid_t target_pid;
-    struct job_t* job_ptr;
-
-    /* 參數是針對jid */
-    if(argv[1][0] == '%'){
-
-        target_jid = atoi(argv[1]+1);
-
-        if(!target_jid){
-            
-            printf("%s: argument must be a PID or %%jobid\n", argv[0]);
-            return;
-        }
-
-        if((job_ptr = getjobJid(jobs, target_jid)) == NULL){
-
-            printf("%%%d: No such job\n", target_jid);
-            return;
+    // 判斷為帶%或是純int
+    // 有%，為進程組
+    if (argv[1][0] == '%')
+    {   
+        //是jid
+        if (sscanf(&argv[1][1], "%d", &id) > 0)
+        {
+            job = getjobjid(jobs, id); //獲得job
+            if (job == NULL)
+            {
+                printf("%%%d: No such job\n", id);
+                return;
+            }
         }
     }
-    /* 參數是針對pid */
-    else{
-
-        target_pid = atoi(argv[1]);
-
-        if(!target_pid){
-            
-            printf("%s: argument must be a PID or %%jobid\n", argv[0]);
-            return;
-        }
-
-        if((job_ptr = getjobpid(jobs, target_pid)) == NULL){
-
-            printf("(%d): : No such process\n", target_pid);
+    // 其它符號，非法輸入
+    else if (!isdigit(argv[1][0]))
+    {   
+        printf("%s: argument must be a PID or %%jobid\n", argv[0]);
+        return;
+    }
+    // 純整數
+    else
+    {   
+        // pid
+        id = atoi(argv[1]);
+        job = getjobpid(jobs, id);
+        if (job == NULL)
+        {
+            printf("(%d): No such process\n", id);
             return;
         }
     }
 
-    /* 發送信號給指定進程 */
-    Kill(-(job_ptr->pid), SIGCONT); // Continue if stopped
+    // 將已取得的job送入SIGCONT訊號
+    kill(-(job->pid), SIGCONT); //重啟进程, 這裡送到進程組
+    job->state = state;
+    if (state == BG)
+        printf("[%d] (%d) %s", job->jid, job->pid, job->cmdline);
+    else
+        waitfg(job->pid);
 
-    switch (fgbg){
-
-        /* 若為前臺進程，則需要等待進程結束 */
-        case FRONT_GROUND:
-            job_ptr->state = FG;
-            waitfg(job_ptr->pid);
-        break;
-
-        /* 後臺進程打印信息後退出即可 */
-        case BACK_GROUND:
-            job_ptr->state = BG;
-
-            #if (DEBUG_LOG)
-                printf("[%d] (%d) %s", job_ptr->jid, job_ptr->pid, job_ptr->cmdline);
-            #endif
-        break;
-
-        case UNKNOWED:
-            #if (DEBUG_LOG)
-                printf("fatal errror! fgbg is neither 0 nor 1\n");
-            #endif
-            exit(1);
-        break;
-    }
+    return;
 }
 ```
 
@@ -313,33 +265,19 @@ void do_bgfg(char **argv) {
 用來等待前臺進程結束，循環等待子進程結束，然後觸發`SIGCHLD`信號處理函式後回收子進程
 
 ```c
-void waitfg(pid_t pid){
-
-    if(pid <= 0){
-        
-        return;
-    }
-
-    struct job_t* fg = getjobpid(jobs, pid);
-
-    if(fg == NULL){
-
-        return;
-    }
+void waitfg(pid_t pid)
+{
 
     sigset_t mask;
+    sigemptyset(&mask);
 
-    /* 阻擋除了SIGCHLD以外的所有信號 */
-    sigfillset(&mask);
-    sigdelset(&mask, SIGCHLD);
-    sigdelset(&mask, SIGINT);
-    sigdelset(&mask, SIGTSTP);
-
-    /* 等待SIGCHLD信號 */
-    for(; fgpid(fg) != 0; ){
-
-        Sigsuspend(&mask); // suspend until SIGCHLD arrives
+    // (1)以prev覆蓋原先mask暫時解除block(2)執行handler內容(3)恢復原先mask
+    while (fgpid(jobs) != 0)
+    {
+        sigsuspend(&mask);
     }
+
+    return;
 }
 ```
 
@@ -348,70 +286,46 @@ void waitfg(pid_t pid){
 回收前後臺進程並打印子進程結束資訊，注意該函式不會阻塞等待子進程。為了確保執行信號處理函式過程中不被其他信號打斷，可以先行阻擋其他信號
 
 ```c
-void sigchld_handler(int sig) {
-
-    sigset_t mask, prev;
-
-    int stat, olderr = errno; // save original errno
+void sigchld_handler(int sig)
+{
+    int old_errno = errno;
+    struct job_t *job;
+    int status;
     pid_t pid;
+    sigset_t mask_all, prev; // for sigprocmask
+    sigfillset(&mask_all);
 
-    sigfillset(&mask);
-
-    /* 阻擋其他信號 */
-    Sigprocmask(SIG_BLOCK, &mask, &prev);
-
-    while((pid = waitpid(-1, &stat, WNOHANG | WUNTRACED)) > 0){
-
-        /* 進程正常退出 */
-        if(WIFEXITED(stat)){
-
-            #if (DEBUG_LOG)
-            // sprintf(debug_log, "child process [pid: %d] is terminated normally\n", pid);
-            // Sio_print(debug_log);
-            #endif
-
-            /* 刪除作業 */
+    while ((pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0)
+    {
+        // 參考書中handler寫法，避免處理過程被其他訊號中斷
+        sigprocmask(SIG_BLOCK, &mask_all, &prev);
+        //如果子進程正常結束，它就返回真；否則返回假
+        if (WIFEXITED(status))
+        {
             deletejob(jobs, pid);
         }
-        /* 子進程被信號中止 */
-        else if(WIFSIGNALED(stat)){
 
-            #if (DEBUG_LOG)
-            sprintf(debug_log, "Job [%d] (%d) terminated by signal %d\n", getjobpid(jobs, pid)->jid, pid, WTERMSIG(stat));
-            Sio_print(debug_log);
-            #endif
-
-            /* 刪除作業 */
+        //如果子進程因為一個未捕獲的信號而終止，它就返回真；否則返回假
+        else if (WIFSIGNALED(status))
+        {
+            // 如果WIFSIGNALED(status)為真，則可以用該宏獲得導致子進程終止的信號代碼
+            printf("Job [%d] (%d) terminated by signal %d\n", pid2jid(pid), pid, WTERMSIG(status));
             deletejob(jobs, pid);
         }
-        /* 子進程被信號中止 */
-        else if(WIFSTOPPED(stat)){
 
-            #if (DEBUG_LOG)
-            sprintf(debug_log, "Job [%d] (%d) stopped by signal %d\n", 
-                       getjobpid(jobs, pid)->jid, pid, WSTOPSIG(stat));
-            Sio_print(debug_log);
-            #endif
-
-            struct job_t* target = getjobpid(jobs, pid);
-            target->state = ST;
+        //如果當前子進程被暫停了，則返回真；否則返回假。
+        else
+        {
+            // 如果WIFSTOPPED(status)為真，則可以使用該宏獲得導致子進程暫停的信號代碼
+            printf("Job [%d] (%d) stoped by signal %d\n", pid2jid(pid), pid, WSTOPSIG(status));
+            // 由jobs尋找job，並修改job的狀態為stop
+            job = getjobpid(jobs, pid);
+            job->state = ST;
         }
-        /* 中止的子進程收到信號SIGCONT */
-        else if(WIFCONTINUED(stat)){
-
-            #if (DEBUG_LOG)
-            sprintf(debug_log, "child JID: %d, PID: %d is resumed by signal SIGCONT\n", 
-                       pid2jid(pid), pid);
-            Sio_print(debug_log);
-            #endif
-        }
+        sigprocmask(SIG_SETMASK, &prev, NULL);
     }
+    errno = old_errno;
 
-    /* 解鎖 */
-    Sigprocmask(SIG_SETMASK, &prev, NULL);
-
-    errno = olderr; // restore erron
-    
     return;
 }
 ```
@@ -421,17 +335,16 @@ void sigchld_handler(int sig) {
 ctrl + c的信號處理函式，直接發送一個`SIGINT`信號給前臺進程組為`pid`的所有進程
 
 ```c
-void sigint_handler(int sig) {
+void sigint_handler(int sig)
+{
 
+    int old_errno = errno;
     pid_t pid = fgpid(jobs);
-
-    if(pid == 0){
-
-        Sio_print("No front ground job!\n");
-        return ;
+    if (pid != 0)
+    {
+        kill(-pid, SIGINT); // send to all pid = |pid|
     }
-
-    Kill(-pid, SIGINT); // close front ground process group 
+    errno = old_errno;
 
     return;
 }
@@ -442,17 +355,16 @@ void sigint_handler(int sig) {
 ctrl + z的信號處理函式，直接發送一個`SIGTSTP`信號給前臺進程組為`pid`的所有進程
 
 ```c
-void sigtstp_handler(int sig) {
+void sigtstp_handler(int sig)
+{
 
+    int old_errno = errno;
     pid_t pid = fgpid(jobs);
-
-    if(pid == 0){
-
-        Sio_print("No front ground job!\n");
-        return ;
+    if (pid != 0)
+    {
+        kill(-pid, SIGTSTP);
     }
-
-    Kill(-pid, SIGTSTP); // stop front ground process group 
+    errno = old_errno;
 
     return;
 }
