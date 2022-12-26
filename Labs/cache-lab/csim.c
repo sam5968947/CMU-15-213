@@ -113,15 +113,17 @@ static void load_operation(char *line)
     bool find = false;
     int empty_line = -1;
 
+    /* 遍歷cache查看是否存在該數據 */
     for (int i = 0; i < E; i++)
     {
+        /* 緩存命中，同時更新時間 */
         if (virtual_cache[set][i].vaild && virtual_cache[set][i].tag == tag)
         {
             find = true;
             virtual_cache[set][i].timeStamp = ticks;
             break;
         }
-        // eviction occur -->  empty_line != -1
+        /* 找到空的行 */
         else if (!virtual_cache[set][i].vaild)
         {
             empty_line = i;
@@ -129,6 +131,7 @@ static void load_operation(char *line)
     }
 
     // def of pdf
+    /* 若為修改指令，因為會寫回所以hit數一定要加一 */
     hits = op == 'M' ? hits + 1 : hits;
 
     if (find)
@@ -153,11 +156,12 @@ static void load_operation(char *line)
             printf("miss ");
         }
 
-        /* eviction occur */
+        /* 若不命中且沒有空行，就會發生eviction */
         if (empty_line == -1)
         {
 
             evictions++;
+            /* 使用LRU找需要替換的行 */
             empty_line = LRU(set);
 
             if (print_msg)
