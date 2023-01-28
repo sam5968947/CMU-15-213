@@ -92,7 +92,7 @@ static int LRU(uint64_t set)
 
 static void load_operation(char *line)
 {
-    char op;               // the command ex : L M S
+    char op;               // the command ex : L(讀取數據) M(修改數據並存回緩存) S(儲存數據)
     uint64_t addr = 0;      // addr = t + s + b
     uint32_t dataBytes = 0; // the required size
 
